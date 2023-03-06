@@ -81,23 +81,21 @@ func deleteArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateArticle(w http.ResponseWriter, r *http.Request) {
-	// once again, we will need to parse the path parameters
 	vars := mux.Vars(r)
-	// we will need to extract the `id` of the article we
-	// wish to delete
 	id := vars["id"]
-
-	// we then need to loop through all our articles
-	for index, article := range Articles {
-		// if our id path parameter matches one of our
-		// articles
+	var updatedEvent Article
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(reqBody, &updatedEvent)
+	for i, article := range Articles {
 		if article.Id == id {
-			// updates our Articles array to remove the
-			// article
-			Articles = append(Articles[:index], Articles[index+1:]...)
+
+			article.Title = updatedEvent.Title
+			article.Desc = updatedEvent.Desc
+			article.Content = updatedEvent.Content
+			Articles[i] = article
+			json.NewEncoder(w).Encode(article)
 		}
 	}
-
 }
 
 func handleRequests() {
