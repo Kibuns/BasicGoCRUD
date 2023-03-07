@@ -25,6 +25,8 @@ type Article struct {
 	Content string `json:"content"`
 }
 
+var client mongo.Client = newClient()
+
 // let's declare a global Articles array
 // that we can then populate in our main function
 // to simulate a database
@@ -37,7 +39,8 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 func returnAllArticles(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: returnAllArticles")
-	json.NewEncoder(w).Encode(Articles)
+	usersCollection := client.Database("testing").Collection("users")
+	json.NewEncoder(w).Encode(readAll(*usersCollection))
 }
 
 func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +126,7 @@ func handleRequests() {
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
-func main() {
+func newClient() (value mongo.Client) {
 	//connection mongo db
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
@@ -133,6 +136,12 @@ func main() {
 		panic(err)
 	}
 
+	value = *client
+
+	return
+}
+
+func main() {
 	//collection
 	usersCollection := client.Database("testing").Collection("users")
 
@@ -140,18 +149,8 @@ func main() {
 	insertSingle(*usersCollection)
 	insertMultiple(*usersCollection)
 
-	//filter for age > 25
-	filter := bson.D{
-		{Key: "$and",
-			Value: bson.A{
-				bson.D{
-					{Key: "age", Value: bson.D{{Key: "$gt", Value: 25}}},
-				},
-			},
-		},
-	}
 	//read whole collection with filter
-	readMultiple(*usersCollection, filter)
+	readAll(*usersCollection)
 
 	Articles = []Article{
 		{Id: "1", Title: "Hello", Desc: "Article Description", Content: "Article Content"},
@@ -195,9 +194,6 @@ func insertMultiple(usersCollection mongo.Collection) {
 }
 
 func readMultiple(usersCollection mongo.Collection, filter primitive.D) {
-	// retrieve single and multiple documents with a specified filter using FindOne() and Find()
-	// create a search filer
-
 	// retrieve all the documents that match the filter
 	cursor, err := usersCollection.Find(context.TODO(), filter)
 	// check for errors in the finding
@@ -217,4 +213,29 @@ func readMultiple(usersCollection mongo.Collection, filter primitive.D) {
 	for _, result := range results {
 		fmt.Println(result)
 	}
+}
+
+func readAll(usersCollection mongo.Collection) (values []primitive.M) {
+	// retrieve all the documents (empty filter)
+	cursor, err := usersCollection.Find(context.TODO(), bson.D{})
+	// check for errors in the finding
+	if err != nil {
+		panic(err)
+	}
+
+	// convert the cursor result to bson
+	var results []bson.M
+	// check for errors in the conversion
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		panic(err)
+	}
+
+	// display the documents retrieved
+	fmt.Println("displaying all results from the search query")
+	for _, result := range results {
+		fmt.Println(result)
+	}
+
+	values = results
+	return
 }
