@@ -1,16 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
-
-	"context"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,206 +16,68 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-type Article struct {
-	Id      string `json:"Id"`
-	Title   string `json:"Title"`
-	Desc    string `json:"desc"`
-	Content string `json:"content"`
+type Strategy struct {
+	Name    string    `bson:"name"`
+	Script  string    `bson:"script"`
+	Created time.Time `bson:"created"`
 }
 
+// global variable mongodb connection client
 var client mongo.Client = newClient()
 
-// let's declare a global Articles array
-// that we can then populate in our main function
-// to simulate a database
-var Articles []Article
+func main() {
+	handleRequests()
+}
+
+//controllers
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to the HomePage!")
 	fmt.Println("Endpoint Hit: homePage")
 }
 
-func returnAllArticles(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
-	usersCollection := client.Database("testing").Collection("users")
-	json.NewEncoder(w).Encode(readAll(*usersCollection))
-}
-
-func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key := vars["id"]
-
-	// Loop over all of our Articles
-	// if the article.Id equals the key we pass in
-	// return the article encoded as JSON
-	for _, article := range Articles {
-		if article.Id == key {
-			json.NewEncoder(w).Encode(article)
-		}
-	}
-}
-
-func createNewArticle(w http.ResponseWriter, r *http.Request) {
-	// get the body of our POST request
-	// unmarshal this into a new Article struct
-	// append this to our Articles array.
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	var article Article
-	json.Unmarshal(reqBody, &article)
-	// update our global Articles array to include
-	// our new Article
-	Articles = append(Articles, article)
-
-	json.NewEncoder(w).Encode(article)
-}
-
-func deleteArticle(w http.ResponseWriter, r *http.Request) {
-	// once again, we will need to parse the path parameters
-	vars := mux.Vars(r)
-	// we will need to extract the `id` of the article we
-	// wish to delete
-	id := vars["id"]
-
-	// we then need to loop through all our articles
-	for index, article := range Articles {
-		// if our id path parameter matches one of our
-		// articles
-		if article.Id == id {
-			// updates our Articles array to remove the
-			// article
-			Articles = append(Articles[:index], Articles[index+1:]...)
-		}
-	}
-
-}
-
-func updateArticle(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	var updatedEvent Article
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	json.Unmarshal(reqBody, &updatedEvent)
-	for i, article := range Articles {
-		if article.Id == id {
-
-			article.Title = updatedEvent.Title
-			article.Desc = updatedEvent.Desc
-			article.Content = updatedEvent.Content
-			Articles[i] = article
-			json.NewEncoder(w).Encode(article)
-		}
-	}
+func returnAll(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: returnAll")
+	scriptsCollection := client.Database("testing").Collection("strategies")
+	json.NewEncoder(w).Encode(readAll(*scriptsCollection))
 }
 
 func handleRequests() {
-	// creates a new instance of a mux router
 	myRouter := mux.NewRouter().StrictSlash(true)
-	// replace http.HandleFunc with myRouter.HandleFunc
 	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/all", returnAllArticles)
-	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
-	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
-	myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
-	myRouter.HandleFunc("/article/{id}", updateArticle).Methods("PUT")
-
-	// finally, instead of passing in nil, we want
-	// to pass in our newly created router as the second
-	// argument
+	myRouter.HandleFunc("/all", returnAll).Methods("GET")
+	myRouter.HandleFunc("/create", createNewScript).Methods("POST")
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
-func newClient() (value mongo.Client) {
-	//connection mongo db
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
+func createNewScript(w http.ResponseWriter, r *http.Request) {
+	scriptsCollection := client.Database("testing").Collection("strategies")
+
+	// parse the request body into a Strategy struct
+	var strat Strategy
+	err := json.NewDecoder(r.Body).Decode(&strat)
 	if err != nil {
-		panic(err)
-	}
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	value = *client
-
-	return
-}
-
-func main() {
-	//collection
-	usersCollection := client.Database("testing").Collection("users")
-
-	//test methods to test insertion
-	insertSingle(*usersCollection)
-	insertMultiple(*usersCollection)
-
-	//read whole collection with filter
-	readAll(*usersCollection)
-
-	Articles = []Article{
-		{Id: "1", Title: "Hello", Desc: "Article Description", Content: "Article Content"},
-		{Id: "2", Title: "Hello 2", Desc: "Article Description", Content: "Article Content"},
-	}
-	handleRequests()
-}
-
-// TEST METHOD
-func insertSingle(usersCollection mongo.Collection) {
-	// insert a single document into a collection
-	// create a bson.D object
-	user := bson.D{{Key: "fullName", Value: "User 1"}, {Key: "age", Value: 30}}
-	// insert the bson object using InsertOne()
-	result, err := usersCollection.InsertOne(context.TODO(), user)
-	// check for errors in the insertion
+	// insert the script into the database
+	strat.Created = time.Now()
+	result, err := scriptsCollection.InsertOne(context.TODO(), strat)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	// display the id of the newly inserted object
-	fmt.Println(result.InsertedID)
+
+	// return the ID of the newly inserted script
+	fmt.Fprintf(w, "New script created with ID: %s", result.InsertedID)
 }
 
-// TEST METHOD
-func insertMultiple(usersCollection mongo.Collection) {
-	// insert multiple documents into a collection
-	// create a slice of bson.D objects
-	users := []interface{}{
-		bson.D{{Key: "fullName", Value: "User 2"}, {Key: "age", Value: 25}},
-		bson.D{{Key: "fullName", Value: "User 3"}, {Key: "age", Value: 20}},
-		bson.D{{Key: "fullName", Value: "User 4"}, {Key: "age", Value: 28}},
-	}
-	// insert the bson object slice using InsertMany()
-	results, err := usersCollection.InsertMany(context.TODO(), users)
-	// check for errors in the insertion
-	if err != nil {
-		panic(err)
-	}
-	// display the ids of the newly inserted objects
-	fmt.Println(results.InsertedIDs)
-}
+//service functions
 
-func readMultiple(usersCollection mongo.Collection, filter primitive.D) {
-	// retrieve all the documents that match the filter
-	cursor, err := usersCollection.Find(context.TODO(), filter)
-	// check for errors in the finding
-	if err != nil {
-		panic(err)
-	}
-
-	// convert the cursor result to bson
-	var results []bson.M
-	// check for errors in the conversion
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		panic(err)
-	}
-
-	// display the documents retrieved
-	fmt.Println("displaying all results from the search query")
-	for _, result := range results {
-		fmt.Println(result)
-	}
-}
-
-func readAll(usersCollection mongo.Collection) (values []primitive.M) {
+func readAll(collection mongo.Collection) (values []primitive.M) {
 	// retrieve all the documents (empty filter)
-	cursor, err := usersCollection.Find(context.TODO(), bson.D{})
+	cursor, err := collection.Find(context.TODO(), bson.D{})
 	// check for errors in the finding
 	if err != nil {
 		panic(err)
@@ -237,5 +97,19 @@ func readAll(usersCollection mongo.Collection) (values []primitive.M) {
 	}
 
 	values = results
+	return
+}
+
+// other
+func newClient() (value mongo.Client) {
+	//connection mongo db
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
+	if err != nil {
+		panic(err)
+	}
+	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+	value = *client
 	return
 }
