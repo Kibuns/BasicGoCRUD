@@ -12,6 +12,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -135,9 +136,35 @@ func main() {
 	//collection
 	usersCollection := client.Database("testing").Collection("users")
 
+	//test methods to test insertion
+	insertSingle(*usersCollection)
+	insertMultiple(*usersCollection)
+
+	//filter for age > 25
+	filter := bson.D{
+		{Key: "$and",
+			Value: bson.A{
+				bson.D{
+					{Key: "age", Value: bson.D{{Key: "$gt", Value: 25}}},
+				},
+			},
+		},
+	}
+	//read whole collection with filter
+	readMultiple(*usersCollection, filter)
+
+	Articles = []Article{
+		{Id: "1", Title: "Hello", Desc: "Article Description", Content: "Article Content"},
+		{Id: "2", Title: "Hello 2", Desc: "Article Description", Content: "Article Content"},
+	}
+	handleRequests()
+}
+
+// TEST METHOD
+func insertSingle(usersCollection mongo.Collection) {
 	// insert a single document into a collection
 	// create a bson.D object
-	user := bson.D{{"fullName", "User 1"}, {"age", 30}}
+	user := bson.D{{Key: "fullName", Value: "User 1"}, {Key: "age", Value: 30}}
 	// insert the bson object using InsertOne()
 	result, err := usersCollection.InsertOne(context.TODO(), user)
 	// check for errors in the insertion
@@ -146,13 +173,16 @@ func main() {
 	}
 	// display the id of the newly inserted object
 	fmt.Println(result.InsertedID)
+}
 
+// TEST METHOD
+func insertMultiple(usersCollection mongo.Collection) {
 	// insert multiple documents into a collection
 	// create a slice of bson.D objects
 	users := []interface{}{
-		bson.D{{"fullName", "User 2"}, {"age", 25}},
-		bson.D{{"fullName", "User 3"}, {"age", 20}},
-		bson.D{{"fullName", "User 4"}, {"age", 28}},
+		bson.D{{Key: "fullName", Value: "User 2"}, {Key: "age", Value: 25}},
+		bson.D{{Key: "fullName", Value: "User 3"}, {Key: "age", Value: 20}},
+		bson.D{{Key: "fullName", Value: "User 4"}, {Key: "age", Value: 28}},
 	}
 	// insert the bson object slice using InsertMany()
 	results, err := usersCollection.InsertMany(context.TODO(), users)
@@ -162,10 +192,29 @@ func main() {
 	}
 	// display the ids of the newly inserted objects
 	fmt.Println(results.InsertedIDs)
+}
 
-	Articles = []Article{
-		{Id: "1", Title: "Hello", Desc: "Article Description", Content: "Article Content"},
-		{Id: "2", Title: "Hello 2", Desc: "Article Description", Content: "Article Content"},
+func readMultiple(usersCollection mongo.Collection, filter primitive.D) {
+	// retrieve single and multiple documents with a specified filter using FindOne() and Find()
+	// create a search filer
+
+	// retrieve all the documents that match the filter
+	cursor, err := usersCollection.Find(context.TODO(), filter)
+	// check for errors in the finding
+	if err != nil {
+		panic(err)
 	}
-	handleRequests()
+
+	// convert the cursor result to bson
+	var results []bson.M
+	// check for errors in the conversion
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		panic(err)
+	}
+
+	// display the documents retrieved
+	fmt.Println("displaying all results from the search query")
+	for _, result := range results {
+		fmt.Println(result)
+	}
 }
