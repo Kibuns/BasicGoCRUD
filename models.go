@@ -5,7 +5,7 @@ import (
 )
 
 type Strategy struct {
-	Name    string    `bson:"name"`
-	Script  string    `bson:"script"`
-	Created time.Time `bson:"created"`
+	Name    string    `json:"name"`
+	Script  string    `json:"script"`
+	Created time.Time `json:"created"`
 }
