@@ -7,5 +7,5 @@ FROM alpine:3.16
 WORKDIR /app
 COPY --from=builder /app/main .
 
-EXPOSE 8080
-CMD [ "/main.go" ]
+EXPOSE 10000
+CMD [ "/app/main" ]
