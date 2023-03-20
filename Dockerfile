@@ -1,11 +1,16 @@
-FROM golang:1.19-alpine3.16 AS builder
-WORKDIR /app
-COPY . .
-RUN go build -o main.go
+# syntax=docker/dockerfile:1
+FROM golang:1.16-alpine
 
-FROM alpine:3.16
 WORKDIR /app
-COPY --from=builder /app/main .
+
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY *.go ./
+
+RUN go build -o /StratService
 
 EXPOSE 10000
-CMD [ "/app/main" ]
+
+CMD [ "/StratService" ]
