@@ -13,6 +13,7 @@ import (
 
 func main() {
 	handleRequests()
+	messaging.sendMessage("hoi")
 }
 
 //controllers
@@ -33,24 +34,26 @@ func returnStrat(w http.ResponseWriter, r *http.Request) {
 }
 
 func useStrat(w http.ResponseWriter, r *http.Request) {
-	 // create a new Strategy object
-	 s := Strategy{}
- 
-	 // retrieve the document with the specified _id and assign its values to the fields of the Strategy object
-	 var idParam string = mux.Vars(r)["id"]
-	 result := readSingleStrat(idParam)
+	// create a new Strategy object
+	s := Strategy{}
 
-	 resultBytes, err := bson.Marshal(result)
-	 if err != nil {
-		 panic(err)
-	 }
-	 err = bson.Unmarshal(resultBytes, &s)
-	 if err != nil {
-		 panic(err)
-	 }
-	 
-	 fmt.Println("USING STRAT:")
-	 fmt.Println(s.Name)
+	// retrieve the document with the specified _id and assign its values to the fields of the Strategy object
+	var idParam string = mux.Vars(r)["id"]
+	result := readSingleStrat(idParam)
+
+	resultBytes, err := bson.Marshal(result)
+	if err != nil {
+		panic(err)
+	}
+	err = bson.Unmarshal(resultBytes, &s)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("USING STRAT:")
+	fmt.Println(s.Name)
+
+	messaging.sendMessage(s.Script)
 }
 
 func handleRequests() {
