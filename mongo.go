@@ -58,6 +58,29 @@ func readAllStrats() (values []primitive.M) {
 	return
 }
 
+func readSingleStrat(id string) (value primitive.M) {
+	stratCollection := client.Database("testing").Collection("strategies")
+    // convert the hexadecimal string to an ObjectID type
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        panic(err)
+    }
+
+    // retrieve the document with the specified _id
+    var result bson.M
+    err = stratCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: objID}}).Decode(&result)
+    if err != nil {
+        panic(err)
+    }
+
+    // display the retrieved document
+    fmt.Println("displaying the result from the search query")
+    fmt.Println(result)
+	value = result
+
+    return value
+}
+
 //----Update----
 
 //----Delete----

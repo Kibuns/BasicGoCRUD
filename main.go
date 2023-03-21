@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -26,6 +27,32 @@ func returnAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(getAllStrats())
 }
 
+func returnStrat(w http.ResponseWriter, r *http.Request) {
+	var idParam string = mux.Vars(r)["id"]
+	json.NewEncoder(w).Encode(readSingleStrat(idParam))
+}
+
+func useStrat(w http.ResponseWriter, r *http.Request) {
+	 // create a new Strategy object
+	 s := Strategy{}
+ 
+	 // retrieve the document with the specified _id and assign its values to the fields of the Strategy object
+	 var idParam string = mux.Vars(r)["id"]
+	 result := readSingleStrat(idParam)
+
+	 resultBytes, err := bson.Marshal(result)
+	 if err != nil {
+		 panic(err)
+	 }
+	 err = bson.Unmarshal(resultBytes, &s)
+	 if err != nil {
+		 panic(err)
+	 }
+	 
+	 fmt.Println("USING STRAT:")
+	 fmt.Println(s.Name)
+}
+
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
@@ -33,6 +60,8 @@ func handleRequests() {
 
 	myRouter.HandleFunc("/", homePage)
 	myRouter.HandleFunc("/all", returnAll)
+	myRouter.HandleFunc("/get/{id}", returnStrat)
+	myRouter.HandleFunc("/use/{id}", useStrat)
 	myRouter.HandleFunc("/create", storeStrat)
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
