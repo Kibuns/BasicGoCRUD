@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/S-A-RB05/StratService/messaging"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +14,6 @@ import (
 
 func main() {
 	handleRequests()
-	messaging.sendMessage("hoi")
 }
 
 //controllers
@@ -52,8 +52,8 @@ func useStrat(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("USING STRAT:")
 	fmt.Println(s.Name)
-
-	messaging.sendMessage(s.Script)
+	// Send script using rabbitmq
+	messaging.ProduceMessage(s.Script, "strat_queue")
 }
 
 func handleRequests() {
@@ -113,6 +113,13 @@ func CORS(next http.Handler) http.Handler {
 
 		// Next
 		next.ServeHTTP(w, r)
-		return
+		//return
 	})
+
+}
+
+func FailOnError(err error, msg string) {
+	if err != nil {
+		log.Panicf("%s: %s", msg, err)
+	}
 }

@@ -1,46 +1,60 @@
 package messaging
 
 import (
-	"fmt"
+	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func consumeMessage(message string) {
+func ConsumeMessage(message string, queue string) {
+	err := godotenv.Load()
+	FailOnError(err, "Error loading .env file")
+
 	conn, err := amqp.Dial(os.Getenv("CLOUDAMQP_URL"))
-	failOnError(err, "Failed to connect to RabbitMQ")
+	FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
-	// Declare a queue
 	q, err := ch.QueueDeclare(
-		"strat_queue", // queue name
-		false,         // durable
-		false,         // delete when unused
-		false,         // exclusive
-		false,         // no-wait
-		nil,           // arguments
+		queue, // name
+		false, // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
-	failOnError(err, "Failed to declare queue")
+	FailOnError(err, "Failed to declare a queue")
 
-	// Consume from the queue
 	msgs, err := ch.Consume(
-		q.Name, // Queue name
-		"",     // Consumer tag
-		true,   // Auto-acknowledge
-		false,  // Exclusive
-		false,  // No-local
-		false,  // No-wait
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
 		nil,    // args
 	)
-	failOnError(err, "Failed to register a consumer")
+	FailOnError(err, "Failed to register a consumer")
 
-	// Receive messages
-	for msg := range msgs {
-		fmt.Println(string(msg.Body))
+	var forever chan struct{}
+
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
+		}
+	}()
+
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
+}
+
+func FailOnError(err error, msg string) {
+	if err != nil {
+		log.Panicf("%s: %s", msg, err)
 	}
 }
