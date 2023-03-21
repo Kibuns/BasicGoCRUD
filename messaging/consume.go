@@ -8,7 +8,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func ConsumeMessage(message string, queue string) {
+func ConsumeMessage(queue string) {
 	err := godotenv.Load()
 	FailOnError(err, "Error loading .env file")
 
