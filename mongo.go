@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -88,9 +87,6 @@ func readSingleStrat(id string) (value primitive.M) {
 
 // other
 func newClient() (value mongo.Client) {
-	err := godotenv.Load()
-	FailOnError(err, "Error loading .env file")
-
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://stockbrood:<password>@stockbrood.sifn3lq.mongodb.net/test"))
 	if err != nil {
 		panic(err)
