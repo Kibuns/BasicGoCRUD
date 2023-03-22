@@ -6,6 +6,7 @@ import (
 
 type Strategy struct {
 	Name    string    `json:"name"`
-	Script  string    `json:"script"`
+	Mq  string    `json:"mq"`
+	Ex	string	  `json:"ex`
 	Created time.Time `json:"created"`
 }

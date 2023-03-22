@@ -53,7 +53,7 @@ func useStrat(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("USING STRAT:")
 	fmt.Println(s.Name)
 	// Send script using rabbitmq
-	messaging.ProduceMessage(s.Script, "strat_queue")
+	messaging.ProduceMessage(s.Mq, "strat_queue")
 }
 
 func handleRequests() {
