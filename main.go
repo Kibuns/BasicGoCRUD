@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"module example.com/m/v2/messaging"
+	"example.com/m/v2/messaging"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
