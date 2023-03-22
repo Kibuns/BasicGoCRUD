@@ -10,7 +10,6 @@ RUN go mod download
 COPY *.go ./
 COPY . ./
 
-RUN 1s
 RUN go build -o /StratService
 
 EXPOSE 10000
