@@ -2,7 +2,6 @@ package messaging
 
 import (
 	"log"
-	"os"
 
 	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"

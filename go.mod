@@ -1,4 +1,4 @@
-module example.com/m/v2
+module github.com/S-A-RB05/StratService
 
 go 1.20
 
