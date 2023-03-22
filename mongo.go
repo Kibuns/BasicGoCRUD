@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -58,13 +60,39 @@ func readAllStrats() (values []primitive.M) {
 	return
 }
 
+func readSingleStrat(id string) (value primitive.M) {
+	stratCollection := client.Database("testing").Collection("strategies")
+	// convert the hexadecimal string to an ObjectID type
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		panic(err)
+	}
+
+	// retrieve the document with the specified _id
+	var result bson.M
+	err = stratCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: objID}}).Decode(&result)
+	if err != nil {
+		panic(err)
+	}
+
+	// display the retrieved document
+	fmt.Println("displaying the result from the search query")
+	fmt.Println(result)
+	value = result
+
+	return value
+}
+
 //----Update----
 
 //----Delete----
 
 // other
 func newClient() (value mongo.Client) {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
+	err := godotenv.Load()
+	FailOnError(err, "Error loading .env file")
+
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(os.Getenv("MONGODB_URL")))
 	if err != nil {
 		panic(err)
 	}
