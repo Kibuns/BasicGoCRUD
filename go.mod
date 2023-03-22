@@ -1,9 +1,8 @@
-module example.com/StratService
+module github.com/S-A-RB05/StratService
 
 go 1.20
 
 require (
-	example.com/StratService/messaging v1.0.0
 	github.com/gorilla/mux v1.7.2
 	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.7.0
