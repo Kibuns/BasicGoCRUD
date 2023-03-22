@@ -87,7 +87,7 @@ func readSingleStrat(id string) (value primitive.M) {
 
 // other
 func newClient() (value mongo.Client) {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://stockbrood:<password>@stockbrood.sifn3lq.mongodb.net/test"))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://stockbrood:admin@stockbrood.sifn3lq.mongodb.net/test"))
 	if err != nil {
 		panic(err)
 	}
