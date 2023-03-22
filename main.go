@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/S-A-RB05/StratService/messaging"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -33,24 +34,26 @@ func returnStrat(w http.ResponseWriter, r *http.Request) {
 }
 
 func useStrat(w http.ResponseWriter, r *http.Request) {
-	 // create a new Strategy object
-	 s := Strategy{}
- 
-	 // retrieve the document with the specified _id and assign its values to the fields of the Strategy object
-	 var idParam string = mux.Vars(r)["id"]
-	 result := readSingleStrat(idParam)
+	// create a new Strategy object
+	s := Strategy{}
 
-	 resultBytes, err := bson.Marshal(result)
-	 if err != nil {
-		 panic(err)
-	 }
-	 err = bson.Unmarshal(resultBytes, &s)
-	 if err != nil {
-		 panic(err)
-	 }
-	 
-	 fmt.Println("USING STRAT:")
-	 fmt.Println(s.Name)
+	// retrieve the document with the specified _id and assign its values to the fields of the Strategy object
+	var idParam string = mux.Vars(r)["id"]
+	result := readSingleStrat(idParam)
+
+	resultBytes, err := bson.Marshal(result)
+	if err != nil {
+		panic(err)
+	}
+	err = bson.Unmarshal(resultBytes, &s)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("USING STRAT:")
+	fmt.Println(s.Name)
+	// Send script using rabbitmq
+	messaging.ProduceMessage(s.Script, "strat_queue")
 }
 
 func handleRequests() {
@@ -110,6 +113,13 @@ func CORS(next http.Handler) http.Handler {
 
 		// Next
 		next.ServeHTTP(w, r)
-		return
+		//return
 	})
+
+}
+
+func FailOnError(err error, msg string) {
+	if err != nil {
+		log.Panicf("%s: %s", msg, err)
+	}
 }
