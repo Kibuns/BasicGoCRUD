@@ -7,7 +7,7 @@ COPY go.sum ./
 RUN go mod download
 
 COPY *.go ./
-COPY ../
+COPY . ./
 
 RUN 1s
 RUN go build -o /StratService
