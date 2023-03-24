@@ -1,4 +1,4 @@
-package main
+package Models
 
 import (
 	"time"
@@ -7,6 +7,6 @@ import (
 type Strategy struct {
 	Name    string    `json:"name"`
 	Mq  string    `json:"mq"`
-	Ex	string	  `json:"ex`
+	Ex	string	  `json:"ex"`
 	Created time.Time `json:"created"`
 }

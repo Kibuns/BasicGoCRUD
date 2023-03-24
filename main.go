@@ -56,20 +56,6 @@ func useStrat(w http.ResponseWriter, r *http.Request) {
 	messaging.ProduceMessage(s.Mq, "strat_queue")
 }
 
-func handleRequests() {
-	myRouter := mux.NewRouter().StrictSlash(true)
-
-	myRouter.Use(CORS)
-
-	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/all", returnAll)
-	myRouter.HandleFunc("/get/{id}", returnStrat)
-	myRouter.HandleFunc("/use/{id}", useStrat)
-	myRouter.HandleFunc("/create", storeStrat)
-
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
-}
-
 func storeStrat(w http.ResponseWriter, r *http.Request) {
 	body := r.Body
 	fmt.Println("Storing Strat")
@@ -84,9 +70,25 @@ func storeStrat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// insert the strategy into the database
-	insertStrat(strat, w)
+	DAL.insertStrat(strat, w)
 
 }
+
+func handleRequests() {
+	myRouter := mux.NewRouter().StrictSlash(true)
+
+	myRouter.Use(CORS)
+
+	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/all", returnAll)
+	myRouter.HandleFunc("/get/{id}", returnStrat)
+	myRouter.HandleFunc("/use/{id}", useStrat)
+	myRouter.HandleFunc("/create", storeStrat)
+
+	log.Fatal(http.ListenAndServe(":10000", myRouter))
+}
+
+
 
 //service functions
 
