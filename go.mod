@@ -1,10 +1,10 @@
-module github.com/S-A-RB05/StratService
+module github.com/Kibuns/BasicGoCRUD
 
 go 1.20
 
 require (
+	github.com/S-A-RB05/StratService v0.0.0-20230323130900-396fa9a8fdfa
 	github.com/gorilla/mux v1.7.2
-	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.8.0
 	go.mongodb.org/mongo-driver v1.11.2
 )

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Kibuns/BasicGoCRUD/Models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,28 +15,28 @@ import (
 )
 
 // global variable mongodb connection client
-var client mongo.Client = newClient()
+var client mongo.Client = NewClient()
 
 // ----Create----
-func insertStrat(strat Strategy, w http.ResponseWriter) {
-	stratCollection := client.Database("testing").Collection("strategies")
-	strat.Created = time.Now()
-	_, err := stratCollection.InsertOne(context.TODO(), strat)
+func InsertTwoot(twoot Models.Twoot, w http.ResponseWriter) {
+	twootCollection := client.Database("TwootDB").Collection("twoots")
+	twoot.Created = time.Now()
+	_, err := twootCollection.InsertOne(context.TODO(), twoot)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// return the ID of the newly inserted script
-	fmt.Fprintf(w, "New strategy inserted named: %s", strat.Name)
+	fmt.Fprintf(w, "New twoot inserted for the user named: %s", twoot.UserName)
 }
 
 //----Read----
 
-func readAllStrats() (values []primitive.M) {
-	stratCollection := client.Database("testing").Collection("strategies")
+func ReadAllTwoots() (values []primitive.M) {
+	twootCollection := client.Database("TwootDB").Collection("twoots")
 	// retrieve all the documents (empty filter)
-	cursor, err := stratCollection.Find(context.TODO(), bson.D{})
+	cursor, err := twootCollection.Find(context.TODO(), bson.D{})
 	// check for errors in the finding
 	if err != nil {
 		panic(err)
@@ -58,8 +59,8 @@ func readAllStrats() (values []primitive.M) {
 	return
 }
 
-func readSingleStrat(id string) (value primitive.M) {
-	stratCollection := client.Database("testing").Collection("strategies")
+func ReadSingleTwoot(id string) (value primitive.M) {
+	twootCollection := client.Database("TwootDB").Collection("twoots")
 	// convert the hexadecimal string to an ObjectID type
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -68,7 +69,7 @@ func readSingleStrat(id string) (value primitive.M) {
 
 	// retrieve the document with the specified _id
 	var result bson.M
-	err = stratCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: objID}}).Decode(&result)
+	err = twootCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: objID}}).Decode(&result)
 	if err != nil {
 		panic(err)
 	}
@@ -86,8 +87,8 @@ func readSingleStrat(id string) (value primitive.M) {
 //----Delete----
 
 // other
-func newClient() (value mongo.Client) {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://stockbrood:admin@stockbrood.sifn3lq.mongodb.net/test"))
+func NewClient() (value mongo.Client) {
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		panic(err)
 	}
